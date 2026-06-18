@@ -1,6 +1,9 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# works both locally and on Streamlit Cloud
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if root not in sys.path:
+    sys.path.insert(0, root)
 import streamlit as st
 import pandas as pd
 import io
