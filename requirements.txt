@@ -6,3 +6,4 @@ supabase
 streamlit
 pandas
 python-dotenv
+sendgrid

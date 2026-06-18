@@ -30,3 +30,15 @@ def save_email(lead_id: str, persona: str, email_body: str, quality_score: int):
         "quality_score": quality_score,
         "status": "generated"
     }).execute()
+def save_lead(campaign_id: str, name: str, company: str, linkedin_url: str, email: str = "") -> str:
+    res = supabase.table("leads").insert({
+        "campaign_id": campaign_id,
+        "name": name,
+        "company": company,
+        "linkedin_url": linkedin_url,
+        "email": email
+    }).execute()
+    return res.data[0]["id"]
+def get_email_record(lead_id: str) -> dict:
+    res = supabase.table("emails").select("*").eq("lead_id", lead_id).execute()
+    return res.data[0] if res.data else {}

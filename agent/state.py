@@ -4,6 +4,7 @@ class Lead(TypedDict):
     name: str
     company: str
     linkedin_url: str
+    email: str  
     lead_id: Optional[str]      # filled after saving to Supabase
 
 class OutreachState(TypedDict):

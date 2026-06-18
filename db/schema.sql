@@ -23,3 +23,6 @@ create table emails (
   status text default 'generated',
   created_at timestamp default now()
 );
+alter table leads add column if not exists email text;
+alter table emails add column if not exists sent_at timestamp;
+alter table emails add column if not exists status text default 'generated';

@@ -62,7 +62,7 @@ def build_graph():
 
     # Conditional edge — more leads or end
     graph.add_conditional_edges(
-        "save_result",
+        "save_esult",
         has_more_leads,
         {
             "more": "load_lead",   # next lead
