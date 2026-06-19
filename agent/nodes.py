@@ -21,7 +21,8 @@ def load_lead_node(state: OutreachState) -> OutreachState:
         campaign_id=state["campaign_id"],
         name=lead["name"],
         company=lead["company"],
-        linkedin_url=lead["linkedin_url"]
+        linkedin_url=lead["linkedin_url"],
+        email=lead.get("email", "")
     )
     lead["lead_id"] = lead_id
 
@@ -79,7 +80,6 @@ def quality_checker_node(state: OutreachState) -> OutreachState:
     prompt = QUALITY_PROMPT.format(email_body=state["email_body"])
     response = llm.invoke(prompt)
 
-    # Parse score from response
     score = 0
     for line in response.content.splitlines():
         if line.startswith("SCORE:"):
@@ -88,7 +88,11 @@ def quality_checker_node(state: OutreachState) -> OutreachState:
             except ValueError:
                 score = 5
 
-    return {**state, "quality_score": score}
+    return {
+        **state,
+        "quality_score": score,
+        "retry_count": state["retry_count"] + 1
+    }
 
 
 def save_result_node(state: OutreachState) -> OutreachState:
@@ -106,6 +110,8 @@ def save_result_node(state: OutreachState) -> OutreachState:
         "name": lead["name"],
         "company": lead["company"],
         "linkedin_url": lead["linkedin_url"],
+        "email": lead.get("email", ""),
+        "lead_id": lead["lead_id"],
         "persona": state["persona"],
         "email_body": state["email_body"],
         "quality_score": state["quality_score"]
@@ -115,21 +121,4 @@ def save_result_node(state: OutreachState) -> OutreachState:
         **state,
         "results": state["results"] + [result],
         "current_index": state["current_index"] + 1
-    }
-def quality_checker_node(state: OutreachState) -> OutreachState:
-    prompt = QUALITY_PROMPT.format(email_body=state["email_body"])
-    response = llm.invoke(prompt)
-
-    score = 0
-    for line in response.content.splitlines():
-        if line.startswith("SCORE:"):
-            try:
-                score = int(line.replace("SCORE:", "").strip())
-            except ValueError:
-                score = 5
-
-    return {
-        **state,
-        "quality_score": score,
-        "retry_count": state["retry_count"] + 1  # increment here
     }

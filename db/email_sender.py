@@ -7,10 +7,10 @@ from db.supabase_client import supabase
 load_dotenv()
 
 
-def send_email(to_email: str, subject: str, body: str, email_id: str) -> bool:
-    """Send a cold email via SendGrid and update status in Supabase."""
+def send_email(to_email: str, subject: str, body: str, email_id: str) -> tuple[bool, str]:
+    """Send a cold email via SendGrid and update status in Supabase.
+    Returns (success, error_message)."""
 
-    # Parse subject line from email body (our format: first line is "Subject: ...")
     lines = body.strip().splitlines()
     subject_line = subject
     email_body = body
@@ -21,27 +21,34 @@ def send_email(to_email: str, subject: str, body: str, email_id: str) -> bool:
             email_body = "\n".join(lines[i + 1:]).strip()
             break
 
+    sender = os.getenv("SENDER_EMAIL")
+    if not sender:
+        return False, "SENDER_EMAIL not set in environment"
+
     message = Mail(
-        from_email=os.getenv("SENDER_EMAIL"),
+        from_email=sender,
         to_emails=to_email,
         subject=subject_line,
         plain_text_content=email_body
     )
 
     try:
-        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+        api_key = os.getenv("SENDGRID_API_KEY")
+        if not api_key:
+            return False, "SENDGRID_API_KEY not set in environment"
+
+        sg = SendGridAPIClient(api_key)
         response = sg.send(message)
 
         if response.status_code in [200, 202]:
-            # Update status in Supabase
             from datetime import datetime, timezone
             supabase.table("emails").update({
                 "status": "sent",
                 "sent_at": datetime.now(timezone.utc).isoformat()
             }).eq("id", email_id).execute()
-            return True
-        return False
+            return True, ""
+        else:
+            return False, f"SendGrid returned status {response.status_code}: {response.body}"
 
     except Exception as e:
-        print(f"SendGrid error: {e}")
-        return False
+        return False, str(e)
